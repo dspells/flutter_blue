@@ -767,7 +767,7 @@ public class FlutterBluePlugin implements FlutterPlugin, MethodCallHandler, Requ
         }
     };
 
-    private void startScan(MethodCall call, Result result) {
+    private void startScanImpl(MethodCall call, Result result) {
         byte[] data = call.arguments();
         Protos.ScanSettings settings;
         try {
@@ -783,6 +783,17 @@ public class FlutterBluePlugin implements FlutterPlugin, MethodCallHandler, Requ
         } catch (Exception e) {
             result.error("startScan", e.getMessage(), e);
         }
+    }
+
+    private void startScan(MethodCall call, Result result) {
+        ensurePermissionBeforeAction(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? Manifest.permission.BLUETOOTH_CONNECT : null, (granted, permission) -> {
+            if (!granted) {
+                result.error(
+                        "no_permissions", String.format("flutter_blue plugin requires %s for obtaining connected devices", permission), null);
+                return;
+            }
+            startScanImpl(call, result);
+        });
     }
 
     private void stopScan() {
